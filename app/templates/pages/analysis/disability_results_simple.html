@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장해등급 예측 결과 - SANZERO</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8fafc; }
+
+        /* 헤더 */
+        .header { background: #2563eb; color: white; padding: 1rem 0; }
+        .header .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .user-info { color: #e0e7ff; }
+
+        /* 컨테이너 */
+        .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+
+        /* 메인 컨텐츠 */
+        .main { padding: 40px 0; }
+        .back-link { color: #2563eb; text-decoration: none; margin-bottom: 20px; display: inline-block; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* 결과 컨테이너 */
+        .result-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 40px;
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .result-title { font-size: 2rem; margin-bottom: 30px; }
+
+        /* 등급 표시 */
+        .grade-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .grade-1-3 { color: #ff6b6b; text-shadow: 0 0 20px rgba(255, 107, 107, 0.8); }
+        .grade-4-7 { color: #ffa726; text-shadow: 0 0 20px rgba(255, 167, 38, 0.8); }
+        .grade-8-12 { color: #66bb6a; text-shadow: 0 0 20px rgba(102, 187, 106, 0.8); }
+        .grade-13-15 { color: #42a5f5; text-shadow: 0 0 20px rgba(66, 165, 245, 0.8); }
+
+        .result-message { font-size: 1.3rem; margin-bottom: 25px; opacity: 0.95; }
+
+        /* 신뢰도 바 */
+        .confidence-section { margin: 25px 0; }
+        .confidence-label { font-size: 1.1rem; margin-bottom: 10px; }
+        .confidence-bar {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .confidence-fill {
+            background: linear-gradient(45deg, #4caf50, #8bc34a);
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: white;
+            transition: width 1s ease;
+        }
+
+        /* 소스 배지 */
+        .source-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 15px 0;
+        }
+
+        /* 등급 스케일 */
+        .grade-scale-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .grade-scale {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .scale-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.7;
+            transition: all 0.3s;
+        }
+        .scale-item.current {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+        .scale-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-bottom: 8px;
+        }
+        .scale-text { font-size: 0.85rem; text-align: center; }
+
+        /* 상세 정보 카드 */
+        .details-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .detail-item {
+            background: #f8f9ff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .detail-item h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .detail-item p {
+            color: #718096;
+            line-height: 1.5;
+        }
+
+        /* 액션 버튼 */
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary { background: linear-gradient(45deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; }
+        .btn-success { background: linear-gradient(45deg, #4caf50, #66bb6a); color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 주의사항 */
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+
+        .warning-box h4 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .warning-box p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .result-container { padding: 30px 20px; }
+            .grade-display { font-size: 3rem; }
+            .details-grid { grid-template-columns: 1fr; gap: 15px; }
+            .actions { flex-direction: column; align-items: center; }
+            .btn { width: 100%; max-width: 280px; justify-content: center; }
+            .grade-scale { justify-content: space-around; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">🎯 SANZERO</div>
+            <div class="user-info">testuser</div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main">
+        <div class="container">
+            <!-- 뒤로 가기 -->
+            <a href="/" class="back-link">← 메인 대시보드로 돌아가기</a>
+
+            <!-- 결과 메인 컨테이너 -->
+            <div class="result-container">
+                <h1 class="result-title">🎯 장해등급 예측 결과</h1>
+
+                <div id="resultDisplay">
+                    <!-- 결과가 여기에 표시됩니다 -->
+                </div>
+
+                <div id="sourceBadge" class="source-badge" style="display: none;">
+                    <span id="sourceIcon">🔍</span>
+                    <span id="sourceText">예측 방법</span>
+                </div>
+
+                <!-- 신뢰도 표시 -->
+                <div id="confidenceSection" class="confidence-section" style="display: none;">
+                    <div class="confidence-label">예측 신뢰도</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceFill" style="width: 0%;">
+                            <span id="confidenceText">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 등급 정보 -->
+                <div class="grade-scale-container" id="gradeInfo" style="display: none;">
+                    <h3 style="margin-bottom: 15px;">장해등급 분류</h3>
+                    <div class="grade-scale">
+                        <div class="scale-item" data-grade-range="1-3">
+                            <div class="scale-dot" style="background: #ff6b6b;"></div>
+                            <div class="scale-text">1-3급<br>중증</div>
+                        </div>
+                        <div class="scale-item" data-grade-range="4-7">
+                            <div class="scale-dot" style="background: #ffa726;"></div>
+                            <div class="scale-text">4-7급<br>중등도</div>
+                        </div>
+                        <div class="scale-item" data-grade-range="8-12">
+                            <div class="scale-dot" style="background: #66bb6a;"></div>
+                            <div class="scale-text">8-12급<br>경도</div>
+                        </div>
+                        <div class="scale-item" data-grade-range="13-15">
+                            <div class="scale-dot" style="background: #42a5f5;"></div>
+                            <div class="scale-text">13-15급<br>경미</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결과 상세 정보 -->
+            <div class="details-card">
+                <h2 style="text-align: center; margin-bottom: 25px;">📋 예측 상세 정보</h2>
+
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <h4>🎯 예측 등급</h4>
+                        <p id="gradeDetail">결과를 불러오는 중...</p>
+                    </div>
+
+                    <div class="detail-item">
+                        <h4>🔍 예측 방법</h4>
+                        <p id="methodDetail">결과를 불러오는 중...</p>
+                    </div>
+
+                    <div class="detail-item">
+                        <h4>📊 신뢰도</h4>
+                        <p id="confidenceDetail">결과를 불러오는 중...</p>
+                    </div>
+
+                    <div class="detail-item">
+                        <h4>📝 예측 근거</h4>
+                        <p id="explanationDetail">결과를 불러오는 중...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 주의사항 -->
+            <div class="warning-box">
+                <h4>⚠️ 중요한 주의사항</h4>
+                <p>
+                    이 예측 결과는 AI 분석을 통한 <strong>참고용 정보</strong>입니다.
+                    실제 장해등급은 의료진의 정밀 진단과 산재보험 심사위원회의 종합적인 검토를 통해 결정됩니다.
+                    정확한 진단과 등급 결정을 위해서는 반드시 의료진과 상담하시기 바랍니다.
+                </p>
+            </div>
+
+            <!-- 다음 단계 안내 -->
+            <div class="actions">
+                <a href="/compensation/calculator" class="btn btn-primary">
+                    💰 보상금 계산하기
+                </a>
+                <a href="/analysis/disability" class="btn btn-secondary">
+                    🔄 다시 예측하기
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // URL 파라미터에서 결과 데이터 추출
+        const urlParams = new URLSearchParams(window.location.search);
+        const grade = urlParams.get('grade');
+        const confidence = urlParams.get('confidence');
+        const source = urlParams.get('source');
+        const message = decodeURIComponent(urlParams.get('message') || '');
+
+        function displayResult() {
+            const resultDisplay = document.getElementById('resultDisplay');
+            const sourceBadge = document.getElementById('sourceBadge');
+            const confidenceSection = document.getElementById('confidenceSection');
+            const gradeInfo = document.getElementById('gradeInfo');
+
+            if (grade && grade !== 'N/A') {
+                // 등급별 스타일 클래스 결정
+                let gradeClass = '';
+                const gradeNum = parseInt(grade);
+                if (gradeNum <= 3) gradeClass = 'grade-1-3';
+                else if (gradeNum <= 7) gradeClass = 'grade-4-7';
+                else if (gradeNum <= 12) gradeClass = 'grade-8-12';
+                else gradeClass = 'grade-13-15';
+
+                // 결과 표시
+                resultDisplay.innerHTML = `
+                    <div class="grade-display ${gradeClass}">${grade}급</div>
+                    <div class="result-message">${message || `장해등급 ${grade}급으로 예측됩니다`}</div>
+                `;
+
+                // 소스 배지 표시
+                if (source) {
+                    const sourceIcon = getSourceIcon(source);
+                    const sourceText = getSourceText(source);
+                    document.getElementById('sourceIcon').textContent = sourceIcon;
+                    document.getElementById('sourceText').textContent = sourceText;
+                    sourceBadge.style.display = 'inline-flex';
+                }
+
+                // 신뢰도 표시
+                if (confidence) {
+                    const confidencePercent = Math.round(parseFloat(confidence) * 100);
+                    document.getElementById('confidenceText').textContent = `${confidencePercent}%`;
+                    document.getElementById('confidenceFill').style.width = `${confidencePercent}%`;
+                    confidenceSection.style.display = 'block';
+                }
+
+                // 등급 스케일에서 현재 위치 표시
+                const scaleItems = document.querySelectorAll('.scale-item');
+                scaleItems.forEach(item => {
+                    const range = item.dataset.gradeRange;
+                    if (isGradeInRange(gradeNum, range)) {
+                        item.classList.add('current');
+                    }
+                });
+
+                gradeInfo.style.display = 'block';
+
+                // 상세 정보 업데이트
+                updateDetailCards(grade, source, confidence, message);
+
+            } else {
+                // 오류 표시
+                resultDisplay.innerHTML = `
+                    <div style="font-size: 2rem; color: #ff6b6b; margin-bottom: 20px;">❌ 예측 실패</div>
+                    <div class="result-message">${message || '예측 중 오류가 발생했습니다'}</div>
+                `;
+            }
+        }
+
+        function getSourceIcon(source) {
+            const icons = {
+                'exact_match': '🎯',
+                'similarity_match': '🔍',
+                'regression_model': '🤖',
+                'fallback': '⚙️',
+                'error': '❌'
+            };
+            return icons[source] || '🔍';
+        }
+
+        function getSourceText(source) {
+            const texts = {
+                'exact_match': '정확 문구 매칭',
+                'similarity_match': 'BERT 유사도 매칭',
+                'regression_model': '2-Stage 머신러닝',
+                'fallback': '규칙 기반 예측',
+                'error': '예측 오류'
+            };
+            return texts[source] || '알 수 없음';
+        }
+
+        function isGradeInRange(grade, range) {
+            const [min, max] = range.split('-').map(n => parseInt(n));
+            return grade >= min && grade <= max;
+        }
+
+        function updateDetailCards(grade, source, confidence, message) {
+            document.getElementById('gradeDetail').textContent =
+                grade ? `${grade}급 (${getGradeDescription(parseInt(grade))})` : '예측 실패';
+
+            document.getElementById('methodDetail').textContent =
+                source ? getSourceText(source) : '알 수 없음';
+
+            const confidencePercent = confidence ? Math.round(parseFloat(confidence) * 100) : 0;
+            document.getElementById('confidenceDetail').textContent =
+                `${confidencePercent}% (${getConfidenceDescription(confidencePercent)})`;
+
+            document.getElementById('explanationDetail').textContent =
+                message || '예측 근거 정보가 없습니다.';
+        }
+
+        function getGradeDescription(grade) {
+            if (grade <= 3) return '중증 장애';
+            if (grade <= 7) return '중등도 장애';
+            if (grade <= 12) return '경도 장애';
+            return '경미한 장애';
+        }
+
+        function getConfidenceDescription(confidence) {
+            if (confidence >= 90) return '매우 높음';
+            if (confidence >= 70) return '높음';
+            if (confidence >= 50) return '보통';
+            if (confidence >= 30) return '낮음';
+            return '매우 낮음';
+        }
+
+        // 페이지 로드 시 결과 표시
+        document.addEventListener('DOMContentLoaded', displayResult);
+    </script>
+</body>
+</html>

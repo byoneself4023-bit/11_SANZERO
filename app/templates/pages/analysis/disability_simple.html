@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>장해등급 예측 - SANZERO</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8fafc; }
+
+        /* 헤더 */
+        .header { background: #2563eb; color: white; padding: 1rem 0; }
+        .header .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .user-info { color: #e0e7ff; }
+
+        /* 컨테이너 */
+        .container { max-width: 800px; margin: 0 auto; padding: 0 20px; }
+
+        /* 메인 컨텐츠 */
+        .main { padding: 40px 0; }
+        .back-link { color: #2563eb; text-decoration: none; margin-bottom: 20px; display: inline-block; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* 제목 */
+        .title { text-align: center; margin-bottom: 40px; }
+        .title h1 { color: #1f2937; font-size: 2.5rem; margin-bottom: 10px; }
+        .title p { color: #6b7280; font-size: 1.1rem; }
+
+        /* 카드 */
+        .card { background: white; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+        /* 폼 */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #374151; }
+        .form-group label .required { color: #ef4444; }
+
+        .form-control { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; }
+        .form-control:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        select.form-control { cursor: pointer; background: white; }
+        textarea.form-control { min-height: 120px; resize: vertical; }
+
+        /* 버튼 */
+        .btn { display: inline-block; padding: 14px 28px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(45deg, #667eea, #764ba2); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102,126,234,0.3); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* 파이프라인 정보 */
+        .pipeline-info { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 25px; margin: 25px 0; }
+        .pipeline-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        .pipeline-stage { display: flex; align-items: center; gap: 15px; margin: 15px 0; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 8px; }
+        .stage-number { background: rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .stage-info h4 { margin: 0 0 5px 0; font-size: 1rem; }
+        .stage-info p { margin: 0; font-size: 0.9rem; opacity: 0.9; }
+
+        /* 서비스 정보 */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .info-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; text-align: center; }
+        .info-card h4 { color: #4a5568; margin-bottom: 8px; }
+        .info-card p { color: #718096; font-size: 0.9rem; }
+
+        /* 알림 박스 */
+        .alert { padding: 16px; border-radius: 8px; margin: 20px 0; }
+        .alert-warning { background: #fef3c7; border-left: 4px solid #f59e0b; color: #92400e; }
+        .alert-error { background: #fee2e2; border-left: 4px solid #ef4444; color: #b91c1c; }
+        .alert-info { background: #dbeafe; border-left: 4px solid #3b82f6; color: #1e40af; }
+
+        /* 로딩 */
+        .loading { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">🎯 SANZERO</div>
+            <div class="user-info">testuser</div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="main">
+        <div class="container">
+            <!-- 뒤로 가기 -->
+            <a href="/" class="back-link">← 메인 대시보드로 돌아가기</a>
+
+            <!-- 제목 -->
+            <div class="title">
+                <h1>🔮 AI 장해등급 예측</h1>
+                <p>3단계 AI 파이프라인으로 정확한 장해등급을 예측합니다</p>
+            </div>
+
+            <!-- 예측 폼 -->
+            <div class="card">
+                <h2 style="text-align: center; margin-bottom: 30px;">🎯 장해등급 예측 신청</h2>
+
+                <form method="POST" action="/analysis/disability" id="predictionForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token if csrf_token else 'dummy-token' }}">
+
+                    <!-- 기본 정보 -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="gender">성별 <span class="required">*</span></label>
+                            <select name="gender" id="gender" class="form-control" required>
+                                <option value="1">남성</option>
+                                <option value="2">여성</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="age_group">나이대 <span class="required">*</span></label>
+                            <select name="age_group" id="age_group" class="form-control" required>
+                                <option value="1">20대 이하</option>
+                                <option value="2">30대</option>
+                                <option value="3" selected>40대</option>
+                                <option value="4">50대</option>
+                                <option value="5">60대</option>
+                                <option value="6">70대 이상</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="industry_type">산업 분류 <span class="required">*</span></label>
+                            <select name="industry_type" id="industry_type" class="form-control" required>
+                                <option value="1">농업/임업/어업</option>
+                                <option value="2" selected>제조업</option>
+                                <option value="3">건설업</option>
+                                <option value="4">운수업</option>
+                                <option value="5">서비스업</option>
+                                <option value="6">사업서비스업</option>
+                                <option value="7">보건/사회복지업</option>
+                                <option value="8">기타 산업</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="accident_type">재해 유형 <span class="required">*</span></label>
+                            <select name="accident_type" id="accident_type" class="form-control" required>
+                                <option value="1" selected>추락</option>
+                                <option value="2">충돌</option>
+                                <option value="3">끼임</option>
+                                <option value="4">절단/베임</option>
+                                <option value="5">화재/폭발</option>
+                                <option value="6">교통사고</option>
+                                <option value="7">기계/장비 관련</option>
+                                <option value="8">기타</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="body_part">부상 부위 <span class="required">*</span></label>
+                            <select name="body_part" id="body_part" class="form-control" required>
+                                <option value="1">머리</option>
+                                <option value="2">목</option>
+                                <option value="3">가슴</option>
+                                <option value="4">복부</option>
+                                <option value="5" selected>팔/어깨</option>
+                                <option value="6">다리/무릎</option>
+                                <option value="7">손/손가락</option>
+                                <option value="8">발/발가락</option>
+                                <option value="9">허리/척추</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="injury_type">부상 종류 <span class="required">*</span></label>
+                            <select name="injury_type" id="injury_type" class="form-control" required>
+                                <option value="1">절단</option>
+                                <option value="2">골절</option>
+                                <option value="3">탈구</option>
+                                <option value="4" selected>염좌</option>
+                                <option value="5">타박상</option>
+                                <option value="6">찰과상</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="treatment_period">치료 기간 <span class="required">*</span></label>
+                        <select name="treatment_period" id="treatment_period" class="form-control" required>
+                            <option value="1">1개월 미만</option>
+                            <option value="2">1-2개월</option>
+                            <option value="3" selected>3개월</option>
+                            <option value="4">4-6개월</option>
+                            <option value="5">6개월-1년</option>
+                            <option value="6">1년 이상</option>
+                        </select>
+                    </div>
+
+                    <!-- 장해 내용 -->
+                    <div class="form-group">
+                        <label for="장해_내용">장해 내용 상세 설명 <span class="required">*</span></label>
+                        <textarea
+                            name="장해_내용"
+                            id="장해_내용"
+                            class="form-control"
+                            placeholder="예: 프레스 작업 중 손가락 절단, 계단에서 추락하여 다리 골절 등 구체적인 사고 경위와 부상 내용을 설명해주세요."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <!-- 제출 버튼 -->
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            🔮 장해등급 예측하기
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- AI 파이프라인 정보 -->
+            <div class="pipeline-info">
+                <div class="pipeline-title">🤖 3단계 AI 예측 파이프라인</div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">1</div>
+                    <div class="stage-info">
+                        <h4>정확 문구 매칭</h4>
+                        <p>입력된 장해 내용에서 정확한 키워드를 찾아 즉시 매칭 (정확도 100%)</p>
+                    </div>
+                </div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">2</div>
+                    <div class="stage-info">
+                        <h4>BERT 유사도 매칭</h4>
+                        <p>AI 언어 모델을 사용해 유사한 사례와 비교 분석 (임계값 72%)</p>
+                    </div>
+                </div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">3</div>
+                    <div class="stage-info">
+                        <h4>2-Stage 머신러닝 예측</h4>
+                        <p>K-Prototypes 클러스터링과 딥러닝 모델을 통한 종합적 예측</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 서비스 정보 -->
+            <div class="card">
+                <h2 style="text-align: center; margin-bottom: 25px;">📊 예측 서비스 정보</h2>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>입력 데이터</h4>
+                        <p>7개 선택값 + 1개 텍스트</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>예측 범위</h4>
+                        <p>1급(가장 심각) ~ 15급(경미)</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>처리 시간</h4>
+                        <p>평균 2-5초 내 결과</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>활용 데이터</h4>
+                        <p>산재 판례 1,000+ 건</p>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>📋 참고사항</strong><br>
+                    이 예측은 참고용이며, 정확한 장해등급은 의료진의 진단과 심사를 통해 결정됩니다.
+                    예측 결과를 바탕으로 전문가 상담을 받아보시기를 권장합니다.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 폼 제출 처리
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const injuryDescription = document.getElementById('장해_내용').value.trim();
+
+            if (!injuryDescription) {
+                e.preventDefault();
+                alert('장해 내용을 입력해주세요.');
+                return;
+            }
+
+            if (injuryDescription.length < 10) {
+                e.preventDefault();
+                alert('장해 내용을 더 자세히 설명해주세요. (최소 10자 이상)');
+                return;
+            }
+
+            // 제출 버튼 비활성화
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '🔄 예측 중...';
+            submitBtn.classList.add('loading');
+        });
+
+        // 테스트용 데이터 자동 입력 (번들 가이드 예시)
+        function fillTestData() {
+            document.getElementById('body_part').value = '7';  // 손
+            document.getElementById('injury_type').value = '1';  // 절단
+            document.getElementById('treatment_period').value = '2';  // 1-2개월
+            document.getElementById('장해_내용').value = '프레스 작업 중 손가락 절단';
+        }
+
+        // 페이지 로드 후 테스트 데이터 자동 입력 (개발용)
+        window.addEventListener('load', function() {
+            // fillTestData(); // 주석 해제하면 자동으로 테스트 데이터 입력됨
+        });
+    </script>
+</body>
+</html>
